@@ -1,18 +1,25 @@
 pub fn part1(input: String) -> String {
     let commands = parse_input(&input).unwrap();
-    let mut position = Position { x: 0, depth: 0 };
+    let mut position = Position::default();
 
     for command in commands {
-        position.update(&command);
+        position.update_part1(&command);
     }
 
     println!("Position: {:?}", position);
 
-    format!("{}", position.x*position.depth)
+    format!("{}", position.x * position.depth)
 }
 
 pub fn part2(input: String) -> String {
-    todo!()
+    let commands = parse_input(&input).unwrap();
+    let mut position = Position::default();
+
+    for command in commands {
+        position.update_part2(&command);
+    }
+
+    format!("{}", position.x * position.depth)
 }
 
 use std::str::FromStr;
@@ -64,15 +71,34 @@ fn parse_input(input: &str) -> Result<Vec<Command>, CommandParseError> {
 struct Position {
     x: i32,
     depth: i32,
+    aim: i32,
 }
 
 impl Position {
-    fn update(&mut self, command: &Command) {
+    fn update_part1(&mut self, command: &Command) {
         match command {
             Command::Forward(x) => self.x += x,
             Command::Up(x) => self.depth -= x,
             Command::Down(x) => self.depth += x,
         }
     }
+    fn update_part2(&mut self, command: &Command) {
+        match command {
+            Command::Forward(x) => {
+                self.x += x;
+                self.depth += self.aim * x;
+            }
+            Command::Up(x) => self.aim -= x,
+            Command::Down(x) => self.aim += x,
+        }
+    }
 }
-
+impl Default for Position {
+    fn default() -> Self {
+        Position {
+            x: 0,
+            depth: 0,
+            aim: 0,
+        }
+    }
+}
