@@ -15,6 +15,12 @@ enum Cli {
         #[clap(short, long)]
         test: bool,
     },
+    Bench {
+        #[clap(value_enum)]
+        year: Years,
+        #[clap(value_enum, short, long, default_value = "today")]
+        day: Days,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, clap::ValueEnum)]
@@ -48,6 +54,7 @@ fn main() {
             part,
             test,
         } => handle_run(year, day, part, test),
+        Cli::Bench { year, day } => handle_bench(year, day),
     }
 }
 
@@ -58,6 +65,32 @@ fn handle_run(year: Years, day: Days, part: Part, test: bool) {
     let input = find_input(year, day, test);
     let result = advent_puzzles::run_day(year, day, part, input);
     println!("{}", result);
+}
+
+fn handle_bench(year: Years, day: Days) {
+    let year: u16 = year.into();
+    let day: u8 = day.into();
+    let input = find_input(year, day, false);
+
+    let mut criterion = criterion::Criterion::default()
+        .without_plots()
+        .warm_up_time(std::time::Duration::from_millis(2000))
+        .measurement_time(std::time::Duration::from_millis(20000))
+        .with_output_color(true);
+
+    let mut group = criterion.benchmark_group(format!("{} day {}", year, day));
+
+    group.bench_function("part 1", |b| {
+        b.iter(|| advent_puzzles::run_day(year, day, Part::Part1.into(), input.clone()))
+    });
+
+    group.bench_function("part 2", |b| {
+        b.iter(|| advent_puzzles::run_day(year, day, Part::Part2.into(), input.clone()))
+    });
+
+    group.finish();
+
+    criterion.final_summary();
 }
 
 fn find_input(year: u16, day: u8, test: bool) -> String {

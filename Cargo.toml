@@ -11,3 +11,4 @@ advent-derive = { path = "./advent-derive" }
 advent-puzzles = { path = "./advent-puzzles" }
 chrono = "0.4.26"
 thiserror = "1.0.48"
+criterion = "0.5.1"
