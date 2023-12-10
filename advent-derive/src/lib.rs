@@ -12,11 +12,11 @@ pub fn years_enum(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let years = read_dir(years_folder)
         .expect("Failed to read years folder")
         .flat_map(|year| {
-            let year = year.unwrap();
+            let year = year.ok()?;
             if !year.path().is_dir() {
                 return None;
             }
-            let year = year.file_name().into_string().unwrap();
+            let year = year.file_name().into_string().ok()?;
             let year = year.parse::<u16>().ok()?;
             Some(year)
         })
@@ -199,9 +199,7 @@ fn find_entries() -> Vec<Entry> {
                 .file_name()
                 .into_string()
                 .expect("Failed to read year name");
-            let year_value = year_name
-                .parse::<u16>()
-                .expect(format!("Failed to parse year {}", year_name).as_str());
+            let year_value = year_name.parse::<u16>().ok()?;
             let days = read_dir(year.path())
                 .expect("Failed to read days folder")
                 .flat_map(|day| {

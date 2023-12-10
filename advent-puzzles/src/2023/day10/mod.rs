@@ -2,6 +2,8 @@ use array2d::Array2D;
 use colored::Colorize;
 use std::fmt::Display;
 
+use crate::utils::{direction::Direction, map::GetWithPoint, point::Point};
+
 pub fn part1(input: String) -> String {
     let mut grid = part1::parse(&input);
     // part1::print_grid(&grid);
@@ -10,6 +12,7 @@ pub fn part1(input: String) -> String {
 }
 
 mod part1 {
+
     use super::*;
     pub(crate) fn walk_grid(grid: &mut Array2D<Pipe>) -> usize {
         let start_point = find_start(&grid);
@@ -46,7 +49,7 @@ mod part1 {
         let mut connected = Vec::new();
         let pipe = grid.get_point(&point).unwrap();
         for direction in pipe.shape.directions() {
-            let Some(point) = point.move_in_direction(direction) else {
+            let Some(point) = point.move_in_direction(direction).ok_map(grid) else {
                 continue;
             };
             if grid
@@ -80,7 +83,7 @@ mod part1 {
             Direction::South,
             Direction::West,
         ] {
-            let Some(point) = start_point.move_in_direction(*direction) else {
+            let Some(point) = start_point.move_in_direction(*direction).ok_map(grid) else {
                 continue;
             };
             let pipe = grid.get_point(&point).unwrap();
@@ -103,20 +106,11 @@ mod part1 {
         for (y, row) in grid.rows_iter().enumerate() {
             for (x, pipe) in row.enumerate() {
                 if pipe.shape == PipeShape::Start {
-                    return Point::new(x, y);
+                    return Point::new(x as i32, y as i32);
                 }
             }
         }
         panic!("No start found");
-    }
-
-    pub fn print_grid(grid: &Array2D<Pipe>) {
-        for row in grid.rows_iter() {
-            for pipe in row {
-                print!("{}", pipe);
-            }
-            println!();
-        }
     }
 
     pub(crate) fn parse(input: &str) -> Array2D<Pipe> {
@@ -225,7 +219,7 @@ mod part2 {
                 let mut pipe = pipe.clone();
 
                 if pipe.shape == PipeShape::Start {
-                    pipe.shape = find_start_shape(&grid, &Point::new(x, y));
+                    pipe.shape = find_start_shape(&grid, &Point::new(x as i32, y as i32));
                 }
 
                 for (y_offset, row) in pipe.enhance().rows_iter().enumerate() {
@@ -271,7 +265,7 @@ mod part2 {
         let mut connected = Vec::new();
         let pipe = grid.get_point(&point).unwrap();
         for direction in pipe.shape.directions() {
-            let Some(point) = point.move_in_direction(direction) else {
+            let Some(point) = point.move_in_direction(direction).ok_map(grid) else {
                 continue;
             };
             if grid
@@ -311,7 +305,7 @@ mod part2 {
             Direction::East,
             Direction::West,
         ] {
-            let Some(point) = start_point.move_in_direction(*direction) else {
+            let Some(point) = start_point.move_in_direction(*direction).ok_map(grid) else {
                 continue;
             };
             let pipe = grid.get_point(&point).unwrap();
@@ -334,7 +328,7 @@ mod part2 {
         let directions = find_directions_start(&grid, &start_point);
         let mut connected = Vec::new();
         for direction in directions {
-            let Some(point) = start_point.move_in_direction(direction) else {
+            let Some(point) = start_point.move_in_direction(direction).ok_map(grid) else {
                 continue;
             };
             let pipe = grid.get_point(&point).unwrap();
@@ -358,7 +352,7 @@ mod part2 {
         for (y, row) in grid.rows_iter().enumerate() {
             for (x, pipe) in row.enumerate() {
                 if pipe.shape == PipeShape::Start {
-                    return Point::new(x, y);
+                    return Point::new(x as i32, y as i32);
                 }
             }
         }
@@ -377,15 +371,6 @@ mod part2 {
             .collect();
 
         Array2D::from_rows(&vec).unwrap()
-    }
-
-    pub fn print_grid(grid: &Array2D<Pipe>) {
-        for row in grid.rows_iter() {
-            for pipe in row {
-                print!("{}", pipe);
-            }
-            println!();
-        }
     }
 
     #[derive(Debug, Clone)]
@@ -566,87 +551,5 @@ impl Display for PipeShape {
             PipeShape::SouthEast => '┌',
         };
         write!(f, "{}", c)
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum Direction {
-    North,
-    East,
-    South,
-    West,
-}
-
-impl Direction {
-    fn opposite(&self) -> Self {
-        match self {
-            Direction::North => Direction::South,
-            Direction::East => Direction::West,
-            Direction::South => Direction::North,
-            Direction::West => Direction::East,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-struct Point {
-    x: usize,
-    y: usize,
-}
-
-impl Point {
-    fn new(x: usize, y: usize) -> Self {
-        Point { x, y }
-    }
-
-    fn move_in_direction(&self, direction: Direction) -> Option<Point> {
-        match direction {
-            Direction::North => {
-                if self.y == 0 {
-                    None
-                } else {
-                    Some(Point::new(self.x, self.y - 1))
-                }
-            }
-            Direction::East => Some(Point::new(self.x + 1, self.y)),
-            Direction::South => Some(Point::new(self.x, self.y + 1)),
-            Direction::West => {
-                if self.x == 0 {
-                    None
-                } else {
-                    Some(Point::new(self.x - 1, self.y))
-                }
-            }
-        }
-    }
-
-    fn neighbours(&self) -> Vec<Point> {
-        vec![
-            self.move_in_direction(Direction::North),
-            self.move_in_direction(Direction::East),
-            self.move_in_direction(Direction::South),
-            self.move_in_direction(Direction::West),
-        ]
-        .into_iter()
-        .filter_map(|p| p)
-        .collect()
-    }
-}
-
-trait GetWithPoint {
-    type Item;
-    fn get_point(&self, point: &Point) -> Option<&Self::Item>;
-    fn get_point_mut(&mut self, point: &Point) -> Option<&mut Self::Item>;
-}
-
-impl<T> GetWithPoint for Array2D<T> {
-    type Item = T;
-
-    fn get_point(&self, point: &Point) -> Option<&Self::Item> {
-        self.get(point.y, point.x)
-    }
-
-    fn get_point_mut(&mut self, point: &Point) -> Option<&mut Self::Item> {
-        self.get_mut(point.y, point.x)
     }
 }
