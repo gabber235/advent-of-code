@@ -9,6 +9,8 @@ name = "advent_puzzles"
 
 [dependencies]
 advent-derive = { path = "../advent-derive" }
+array2d = "0.3.0"
+colored = "2.1.0"
 iterslide = "1.0.1"
 itertools = "0.11.0"
 nom = "7.1.3"
