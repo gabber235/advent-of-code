@@ -97,6 +97,10 @@ impl Point {
             .filter(|p| p.ok_dimensions(map.num_columns(), map.num_rows()).is_some())
             .collect()
     }
+
+    pub fn manhattan_distance(&self, other: &Point) -> usize {
+        ((self.x - other.x).abs() + (self.y - other.y).abs()) as usize
+    }
 }
 
 impl Display for Point {
