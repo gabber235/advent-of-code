@@ -21,3 +21,5 @@ strum = { version = "0.25.0", features = ["strum_macros", "derive"] }
 strum_macros = "0.25.3"
 thiserror = "1.0.48"
 
+[dev-dependencies]
+rstest = "0.18.2"
