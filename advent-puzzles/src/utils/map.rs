@@ -37,13 +37,14 @@ where
     }
 }
 
-pub trait GetWithPoint {
+pub trait InteractWithPoint {
     type Item;
     fn get_point(&self, point: &Point) -> Option<&Self::Item>;
     fn get_point_mut(&mut self, point: &Point) -> Option<&mut Self::Item>;
+    fn set_point(&mut self, point: &Point, item: Self::Item) -> Result<(), array2d::Error>;
 }
 
-impl<T> GetWithPoint for Array2D<T> {
+impl<T> InteractWithPoint for Array2D<T> {
     type Item = T;
 
     fn get_point(&self, point: &Point) -> Option<&Self::Item> {
@@ -54,6 +55,13 @@ impl<T> GetWithPoint for Array2D<T> {
     fn get_point_mut(&mut self, point: &Point) -> Option<&mut Self::Item> {
         let point = point.ok_map(self)?;
         self.get_mut(point.y as usize, point.x as usize)
+    }
+
+    fn set_point(&mut self, point: &Point, item: Self::Item) -> Result<(), array2d::Error> {
+        let point = point.ok_map(self).ok_or(array2d::Error::IndexOutOfBounds(
+            point.index(self.num_rows()),
+        ))?;
+        self.set(point.y as usize, point.x as usize, item)
     }
 }
 

@@ -11,6 +11,7 @@ name = "advent_puzzles"
 advent-derive = { path = "../advent-derive" }
 array2d = "0.3.0"
 colored = "2.1.0"
+indicatif = { version = "0.17.7", features = ["rayon"] }
 iterslide = "1.0.1"
 itertools = "0.11.0"
 nom = "7.1.3"

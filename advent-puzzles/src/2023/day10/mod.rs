@@ -2,7 +2,7 @@ use array2d::Array2D;
 use colored::Colorize;
 use std::fmt::Display;
 
-use crate::utils::{direction::Direction, map::GetWithPoint, point::Point};
+use crate::utils::{direction::Direction, map::InteractWithPoint, point::Point};
 
 pub fn part1(input: String) -> String {
     let mut grid = part1::parse(&input);

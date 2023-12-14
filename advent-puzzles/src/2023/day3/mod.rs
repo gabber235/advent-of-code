@@ -4,7 +4,7 @@ use array2d::Array2D;
 
 use crate::utils::{
     direction::Direction,
-    map::{GenerateMap, GetWithPoint, IterAll},
+    map::{GenerateMap, InteractWithPoint, IterAll},
     point::Point,
 };
 

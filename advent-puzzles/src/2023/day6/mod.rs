@@ -1,5 +1,4 @@
 use itertools::Itertools;
-use rayon::prelude::*;
 use std::u64;
 
 use nom::{
