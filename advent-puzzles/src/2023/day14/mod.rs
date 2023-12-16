@@ -6,15 +6,12 @@ use array2d::Array2D;
 
 use crate::utils::map::GenerateMap;
 use crate::utils::map::InteractWithPoint;
-use crate::utils::map::PrintMap;
 use crate::utils::point::Point;
 
 pub fn part1(input: String) -> String {
     let mut grid = Array2D::generate_map(&input, |_, c| Spot::from(c)).unwrap();
 
     tilt_north(&mut grid);
-
-    grid.print_map();
 
     calculate_north_load(&grid).to_string()
 }
@@ -26,7 +23,7 @@ pub fn part2(input: String) -> String {
     let mut loop_start = 0;
     let mut loop_size = 0;
 
-    for i in 0..10000 {
+    for _ in 0..10000 {
         tilt_north(&mut grid);
         tilt_west(&mut grid);
         tilt_south(&mut grid);
@@ -35,10 +32,6 @@ pub fn part2(input: String) -> String {
         if seen.contains(&grid) {
             loop_start = seen.iter().position(|g| *g == grid).unwrap();
             loop_size = seen.len() - loop_start;
-            println!(
-                "Loop found at i: {}, loop_start: {}, loop_size: {}",
-                i, loop_start, loop_size
-            );
             break;
         }
 
