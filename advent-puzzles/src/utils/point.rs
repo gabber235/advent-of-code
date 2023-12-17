@@ -108,3 +108,27 @@ impl Display for Point {
         write!(f, "({}, {})", self.x, self.y)
     }
 }
+
+impl From<(i32, i32)> for Point {
+    fn from((x, y): (i32, i32)) -> Self {
+        Self::new(x, y)
+    }
+}
+
+impl From<Point> for (i32, i32) {
+    fn from(point: Point) -> Self {
+        (point.x, point.y)
+    }
+}
+
+impl Ord for Point {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.y.cmp(&other.y).then_with(|| self.x.cmp(&other.x))
+    }
+}
+
+impl PartialOrd for Point {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
