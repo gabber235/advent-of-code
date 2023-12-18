@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Direction {
@@ -40,12 +40,20 @@ impl Direction {
 impl From<char> for Direction {
     fn from(c: char) -> Self {
         match c {
-            '^' => Self::North,
-            '>' => Self::East,
-            'v' => Self::South,
-            '<' => Self::West,
+            '^' | 'U' => Self::North,
+            '>' | 'R' => Self::East,
+            'v' | 'D' => Self::South,
+            '<' | 'L' => Self::West,
             _ => panic!("Invalid direction: {}", c),
         }
+    }
+}
+
+impl FromStr for Direction {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::from(s.chars().next().unwrap()))
     }
 }
 

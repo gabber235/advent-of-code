@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, i32};
 
 use array2d::Array2D;
 
@@ -34,8 +34,8 @@ impl Point {
         }
     }
 
-    pub fn ok_dimensions(&self, width: usize, height: usize) -> Option<Self> {
-        if self.x >= 0 && self.y >= 0 && self.x < width as i32 && self.y < height as i32 {
+    pub fn ok_dimensions(&self, min_x: i32, min_y: i32, max_x: i32, max_y: i32) -> Option<Self> {
+        if self.x >= min_x && self.y >= min_y && self.x <= max_x && self.y <= max_y {
             Some(*self)
         } else {
             None
@@ -43,7 +43,12 @@ impl Point {
     }
 
     pub fn ok_map<T>(&self, map: &Array2D<T>) -> Option<Self> {
-        self.ok_dimensions(map.num_columns(), map.num_rows())
+        self.ok_dimensions(
+            0,
+            0,
+            map.num_columns() as i32 - 1,
+            map.num_rows() as i32 - 1,
+        )
     }
 
     pub fn move_in_direction(&self, direction: Direction) -> Point {
@@ -87,14 +92,40 @@ impl Point {
     pub fn neighbours_within_map<T>(&self, map: &Array2D<T>) -> Vec<Point> {
         self.neighbours()
             .into_iter()
-            .filter(|p| p.ok_dimensions(map.num_columns(), map.num_rows()).is_some())
+            .filter(|p| p.ok_map(map).is_some())
             .collect()
     }
 
     pub fn neighbours_within_map_all_directions<T>(&self, map: &Array2D<T>) -> Vec<Point> {
         self.neighbours_all_directions()
             .into_iter()
-            .filter(|p| p.ok_dimensions(map.num_columns(), map.num_rows()).is_some())
+            .filter(|p| p.ok_map(map).is_some())
+            .collect()
+    }
+
+    pub fn neighbours_within_dimensions(
+        &self,
+        min_x: i32,
+        min_y: i32,
+        max_x: i32,
+        max_y: i32,
+    ) -> Vec<Point> {
+        self.neighbours()
+            .into_iter()
+            .filter(|p| p.ok_dimensions(min_x, min_y, max_x, max_y).is_some())
+            .collect()
+    }
+
+    pub fn neighbours_within_dimensions_all_directions(
+        &self,
+        min_x: i32,
+        min_y: i32,
+        max_x: i32,
+        max_y: i32,
+    ) -> Vec<Point> {
+        self.neighbours_all_directions()
+            .into_iter()
+            .filter(|p| p.ok_dimensions(min_x, min_y, max_x, max_y).is_some())
             .collect()
     }
 
