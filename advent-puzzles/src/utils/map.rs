@@ -103,14 +103,28 @@ where
 }
 
 pub trait PrintMap {
+    type Item;
     fn print_map(&self);
+    fn print_with<F: Fn(&Self::Item) -> String>(&self, f: F)
+    where
+        Self: Sized;
 }
 
 impl<T: std::fmt::Display> PrintMap for Array2D<T> {
+    type Item = T;
     fn print_map(&self) {
         for row in self.rows_iter() {
             for item in row {
                 print!("{}", item);
+            }
+            println!();
+        }
+    }
+
+    fn print_with<F: Fn(&Self::Item) -> String>(&self, f: F) {
+        for row in self.rows_iter() {
+            for item in row {
+                print!("{}", f(item));
             }
             println!();
         }

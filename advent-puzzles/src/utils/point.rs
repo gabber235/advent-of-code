@@ -132,6 +132,10 @@ impl Point {
     pub fn manhattan_distance(&self, other: &Point) -> usize {
         ((self.x - other.x).abs() + (self.y - other.y).abs()) as usize
     }
+
+    pub fn is_origin(&self) -> bool {
+        self.x == 0 && self.y == 0
+    }
 }
 
 impl Display for Point {
