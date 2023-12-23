@@ -1,4 +1,8 @@
-use std::{fmt::Display, i32};
+use std::{
+    fmt::Display,
+    i32,
+    ops::{Add, Mul},
+};
 
 use array2d::Array2D;
 
@@ -71,9 +75,6 @@ impl Point {
             self.move_in_direction(Direction::South),
             self.move_in_direction(Direction::West),
         ]
-        .into_iter()
-        .map(|p| p)
-        .collect()
     }
 
     pub fn neighbours_all_directions(&self) -> Vec<Point> {
@@ -136,6 +137,12 @@ impl Point {
     pub fn is_origin(&self) -> bool {
         self.x == 0 && self.y == 0
     }
+
+    pub fn looping_map<T>(&self, map: &Array2D<T>) -> Point {
+        let width = map.num_columns() as i32;
+        let height = map.num_rows() as i32;
+        Self::new(self.x.rem_euclid(width), self.y.rem_euclid(height))
+    }
 }
 
 impl Display for Point {
@@ -165,5 +172,59 @@ impl Ord for Point {
 impl PartialOrd for Point {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl Default for Point {
+    fn default() -> Self {
+        Self::new(0, 0)
+    }
+}
+
+impl Mul<i32> for Point {
+    type Output = Self;
+
+    fn mul(self, rhs: i32) -> Self::Output {
+        Self::new(self.x * rhs, self.y * rhs)
+    }
+}
+
+impl Mul<Point> for i32 {
+    type Output = Point;
+
+    fn mul(self, rhs: Point) -> Self::Output {
+        Self::Output::new(self * rhs.x, self * rhs.y)
+    }
+}
+
+impl Add<Point> for Point {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new(self.x + rhs.x, self.y + rhs.y)
+    }
+}
+
+impl Add<(i32, i32)> for Point {
+    type Output = Self;
+
+    fn add(self, rhs: (i32, i32)) -> Self::Output {
+        Self::new(self.x + rhs.0, self.y + rhs.1)
+    }
+}
+
+impl Add<Direction> for Point {
+    type Output = Self;
+
+    fn add(self, rhs: Direction) -> Self::Output {
+        self.move_in_direction(rhs)
+    }
+}
+
+impl Add<Direction> for &Point {
+    type Output = Point;
+
+    fn add(self, rhs: Direction) -> Self::Output {
+        self.move_in_direction(rhs)
     }
 }

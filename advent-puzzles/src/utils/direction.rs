@@ -1,6 +1,8 @@
 use std::{fmt::Display, str::FromStr};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+use strum_macros::EnumIter;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, EnumIter)]
 pub enum Direction {
     North,
     East,
