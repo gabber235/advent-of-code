@@ -1,0 +1,7 @@
+[example]
+part1 = "142"
+part2 = "281"
+
+[real]
+part1 = "54632"
+part2 = "54019"

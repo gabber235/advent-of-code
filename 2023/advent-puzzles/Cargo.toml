@@ -21,9 +21,12 @@ num = "0.4.1"
 pathfinding = "4.6.0"
 petgraph = "0.6.4"
 rayon = "1.8.0"
-strum = { version = "0.25.0", features = ["strum_macros", "derive"] }
+regex = "1.10"
+serde = { version = "1.0", features = ["derive"] }
+strum = { version = "0.25.0", features = ["derive", "strum_macros"] }
 strum_macros = "0.25.3"
 thiserror = "1.0.48"
+toml = "0.8"
 
 [dev-dependencies]
 rstest = "0.18.2"

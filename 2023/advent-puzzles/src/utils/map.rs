@@ -74,7 +74,7 @@ impl<T> InteractWithPoint for Array2D<T> {
 
 pub trait IterAll {
     type Item;
-    fn iter_all(&self) -> MapIter<Self::Item>;
+    fn iter_all(&self) -> MapIter<'_, Self::Item>;
 }
 
 impl<T> IterAll for Array2D<T>
@@ -83,7 +83,7 @@ where
 {
     type Item = T;
 
-    fn iter_all(&self) -> MapIter<Self::Item> {
+    fn iter_all(&self) -> MapIter<'_, Self::Item> {
         MapIter {
             map: self,
             index: 0,
