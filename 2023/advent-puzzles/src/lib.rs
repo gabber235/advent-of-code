@@ -1,6 +1,10 @@
+pub use advent_derive::memoize;
+
 use advent_derive::*;
 
 pub mod utils;
+
+pub use utils::memoize::{clear_all_caches_and_stats, print_memoize_stats};
 
 year_declerations!();
 

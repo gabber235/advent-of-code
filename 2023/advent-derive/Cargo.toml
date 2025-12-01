@@ -9,6 +9,7 @@ name = "advent_derive"
 proc-macro = true
 
 [dependencies]
-syn = { version = "*", features = ["extra-traits"] }
-quote = "*"
+inventory = "0.3"
 proc-macro2 = "*"
+quote = "*"
+syn = { version = "*", features = ["extra-traits", "full"] }

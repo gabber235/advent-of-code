@@ -1,4 +1,5 @@
 use advent_derive::*;
+use advent_puzzles::{clear_all_caches_and_stats, print_memoize_stats};
 use chrono::Datelike;
 use clap::Parser;
 use colored::*;
@@ -91,7 +92,7 @@ fn handle_run(year: Years, day: Days, part: Part, example: bool) {
     let day_num: u8 = day.into();
 
     println!(
-        "{} {} {}",
+        "\n\n{} {} {}",
         "▶".cyan(),
         format!("Year {} Day {}", year_num, day_num).cyan().bold(),
         if example {
@@ -122,6 +123,7 @@ fn handle_run(year: Years, day: Days, part: Part, example: bool) {
 }
 
 fn run_part(year: u16, day: u8, part: bool, input: &str, label: &str) {
+    clear_all_caches_and_stats();
     let start = Instant::now();
     let result = advent_puzzles::run_day(year, day, part, input.to_string());
     let elapsed = start.elapsed();
@@ -133,6 +135,7 @@ fn run_part(year: u16, day: u8, part: bool, input: &str, label: &str) {
         result.green().bold(),
         format!("({})", time_str).dimmed()
     );
+    print_memoize_stats();
 }
 
 fn format_duration(duration: std::time::Duration) -> String {
@@ -267,6 +270,7 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
         if input.is_empty() {
             println!("  {} {}", "Part 1:".bold(), "No example input".yellow());
         } else {
+            clear_all_caches_and_stats();
             let result = advent_puzzles::run_day(year, day, false, input);
             if result == expected.example.part1 {
                 println!(
@@ -286,6 +290,7 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
                 );
                 failed += 1;
             }
+            print_memoize_stats();
         }
     } else if verbose {
         println!("  {} {}", "Part 1:".bold(), "No expected value".dimmed());
@@ -296,6 +301,7 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
         if input.is_empty() {
             println!("  {} {}", "Part 2:".bold(), "No example input".yellow());
         } else {
+            clear_all_caches_and_stats();
             let result = advent_puzzles::run_day(year, day, true, input);
             if result == expected.example.part2 {
                 println!(
@@ -315,6 +321,7 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
                 );
                 failed += 1;
             }
+            print_memoize_stats();
         }
     } else if verbose {
         println!("  {} {}", "Part 2:".bold(), "No expected value".dimmed());
@@ -326,6 +333,7 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
         }
 
         if !real.part1.is_empty() {
+            clear_all_caches_and_stats();
             let input = find_input(year, day, false, false);
             let result = advent_puzzles::run_day(year, day, false, input);
             if result == real.part1 {
@@ -346,9 +354,11 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
                 );
                 failed += 1;
             }
+            print_memoize_stats();
         }
 
         if !real.part2.is_empty() {
+            clear_all_caches_and_stats();
             let input = find_input(year, day, false, true);
             let result = advent_puzzles::run_day(year, day, true, input);
             if result == real.part2 {
@@ -369,6 +379,7 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
                 );
                 failed += 1;
             }
+            print_memoize_stats();
         }
     }
 
