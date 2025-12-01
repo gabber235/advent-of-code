@@ -5,10 +5,13 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[workspace]
+members = [".", "advent-derive", "advent-puzzles"]
+
 [dependencies]
-clap = { version = "4.3.21", features = ["derive"] }
 advent-derive = { path = "./advent-derive" }
 advent-puzzles = { path = "./advent-puzzles" }
 chrono = "0.4.26"
-thiserror = "1.0.48"
+clap = { version = "4.3.21", features = ["derive"] }
 criterion = "0.5.1"
+thiserror = "1.0.48"
