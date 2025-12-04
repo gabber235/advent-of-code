@@ -44,6 +44,14 @@ pub trait InteractWithPoint {
     fn get_point_mut(&mut self, point: &Point) -> Option<&mut Self::Item>;
     fn get_looping_point(&self, point: &Point) -> &Self::Item;
     fn set_point(&mut self, point: &Point, item: Self::Item) -> Result<(), array2d::Error>;
+
+    /// Returns the four orthogonal neighbours (up, down, left, right) of `point`
+    /// that are inside the bounds of the map.
+    fn four_neighbours(&self, point: &Point) -> Vec<Point>;
+
+    /// Returns the eight neighbours (including diagonals) of `point`
+    /// that are inside the bounds of the map.
+    fn eight_neighbours(&self, point: &Point) -> Vec<Point>;
 }
 
 impl<T> InteractWithPoint for Array2D<T> {
@@ -69,6 +77,45 @@ impl<T> InteractWithPoint for Array2D<T> {
             point.index(self.num_rows()),
         ))?;
         self.set(point.y as usize, point.x as usize, item)
+    }
+
+    fn four_neighbours(&self, point: &Point) -> Vec<Point> {
+        // Offsets for up, down, left, right
+        let offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)];
+        let mut neighbours = Vec::with_capacity(4);
+        if let Some(base) = point.ok_map(self) {
+            for (dx, dy) in offsets.iter() {
+                let candidate = Point::new(base.x + dx, base.y + dy);
+                if candidate.ok_map(self).is_some() {
+                    neighbours.push(candidate);
+                }
+            }
+        }
+        neighbours
+    }
+
+    fn eight_neighbours(&self, point: &Point) -> Vec<Point> {
+        // Offsets for the eight surrounding cells
+        let offsets = [
+            (-1, -1),
+            (-1, 0),
+            (-1, 1),
+            (0, -1),
+            (0, 1),
+            (1, -1),
+            (1, 0),
+            (1, 1),
+        ];
+        let mut neighbours = Vec::with_capacity(8);
+        if let Some(base) = point.ok_map(self) {
+            for (dx, dy) in offsets.iter() {
+                let candidate = Point::new(base.x + dx, base.y + dy);
+                if candidate.ok_map(self).is_some() {
+                    neighbours.push(candidate);
+                }
+            }
+        }
+        neighbours
     }
 }
 
