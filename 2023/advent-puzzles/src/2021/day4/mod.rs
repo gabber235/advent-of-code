@@ -1,8 +1,8 @@
-pub fn part1(input: String) -> String {
+pub fn part1(_input: String) -> String {
     todo!()
 }
 
-pub fn part2(input: String) -> String {
+pub fn part2(_input: String) -> String {
     todo!()
 }
 

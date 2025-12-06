@@ -155,36 +155,6 @@ impl Section {
     }
 }
 
-trait Intersection {
-    fn intersection(&self, other: &Self) -> Option<Self>
-    where
-        Self: Sized;
-}
-
-impl Intersection for Section {
-    fn intersection(&self, other: &Section) -> Option<Section> {
-        let x = self.x.intersection(&other.x)?;
-        let m = self.m.intersection(&other.m)?;
-        let a = self.a.intersection(&other.a)?;
-        let s = self.s.intersection(&other.s)?;
-
-        Some(Section { x, m, a, s })
-    }
-}
-
-impl Intersection for Range<u16> {
-    fn intersection(&self, other: &Range<u16>) -> Option<Range<u16>> {
-        let start = self.start.max(other.start);
-        let end = self.end.min(other.end);
-
-        if start >= end {
-            None
-        } else {
-            Some(start..end)
-        }
-    }
-}
-
 #[derive(Debug)]
 struct Part {
     x: u16,

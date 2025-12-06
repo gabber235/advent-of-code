@@ -1,9 +1,6 @@
-use indicatif::{ParallelProgressIterator, ProgressStyle};
-use itertools::Itertools;
 use nom::{character::complete::alpha1, multi::separated_list1, IResult};
-use petgraph::graph::{NodeIndex, UnGraph};
-use petgraph::visit::{EdgeRef, IntoNodeReferences};
-use rayon::iter::{ParallelBridge, ParallelIterator};
+use petgraph::graph::UnGraph;
+use petgraph::visit::EdgeRef;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 pub fn part1(input: String) -> String {
@@ -110,7 +107,7 @@ fn edge_key(edge: petgraph::graph::EdgeReference<()>) -> (usize, usize) {
     }
 }
 
-pub fn part2(input: String) -> String {
+pub fn part2(_input: String) -> String {
     todo!()
 }
 

@@ -5,7 +5,9 @@ use clap::Parser;
 use colored::*;
 use serde::Deserialize;
 use std::fs;
+use std::panic;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 #[derive(Debug, Parser)]
@@ -200,10 +202,10 @@ fn test_single_day(year: u16, day: u8) {
     );
     println!("{}", "─".repeat(40).dimmed());
 
-    let (passed, failed) = run_day_tests(year, day, true);
+    let (passed, failed, skipped) = run_day_tests(year, day, true);
 
     println!("{}", "─".repeat(40).dimmed());
-    print_test_summary(passed, failed);
+    print_test_summary(passed, failed, skipped);
 }
 
 fn test_all_days(year: u16) {
@@ -222,6 +224,7 @@ fn test_all_days(year: u16) {
 
     let mut total_passed = 0;
     let mut total_failed = 0;
+    let mut total_skipped = 0;
     let mut days_with_tests = 0;
 
     for day in 1..=25 {
@@ -235,9 +238,10 @@ fn test_all_days(year: u16) {
                 println!();
             }
             println!("{}", format!("Day {}", day).cyan().bold());
-            let (passed, failed) = run_day_tests(year, day, false);
+            let (passed, failed, skipped) = run_day_tests(year, day, false);
             total_passed += passed;
             total_failed += failed;
+            total_skipped += skipped;
             days_with_tests += 1;
         }
     }
@@ -247,10 +251,64 @@ fn test_all_days(year: u16) {
     }
 
     println!("\n{}", "═".repeat(40).dimmed());
-    print_test_summary(total_passed, total_failed);
+    print_test_summary(total_passed, total_failed, total_skipped);
 }
 
-fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
+enum TestResult {
+    Pass(String),
+    Fail(String),
+    Skipped,
+}
+
+fn run_part_test(year: u16, day: u8, part: bool, input: String) -> TestResult {
+    clear_all_caches_and_stats();
+
+    let panic_info_storage: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    let panic_info_clone = Arc::clone(&panic_info_storage);
+
+    let prev_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        let mut storage = panic_info_clone.lock().unwrap();
+        let message = info
+            .payload()
+            .downcast_ref::<&str>()
+            .map(|s| s.to_string())
+            .or_else(|| info.payload().downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "unknown panic".to_string());
+
+        let location = info
+            .location()
+            .map(|loc| format!("{}:{}:{}", loc.file(), loc.line(), loc.column()))
+            .unwrap_or_else(|| "unknown location".to_string());
+
+        *storage = Some(format!("{}\n    at {}", message, location));
+    }));
+
+    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+        advent_puzzles::run_day(year, day, part, input)
+    }));
+
+    panic::set_hook(prev_hook);
+
+    match result {
+        Ok(output) => TestResult::Pass(output),
+        Err(_) => {
+            let panic_msg = panic_info_storage
+                .lock()
+                .unwrap()
+                .take()
+                .unwrap_or_else(|| "unknown panic".to_string());
+
+            if panic_msg.contains("not yet implemented") {
+                TestResult::Skipped
+            } else {
+                TestResult::Fail(panic_msg)
+            }
+        }
+    }
+}
+
+fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize, usize) {
     let expected_path = format!("advent-puzzles/src/{}/day{}/expected.toml", year, day);
     let expected: ExpectedAnswers = if Path::new(&expected_path).exists() {
         let content = fs::read_to_string(&expected_path).unwrap_or_default();
@@ -259,38 +317,58 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
         if verbose {
             println!("{}", "  No expected.toml found, skipping".yellow());
         }
-        return (0, 0);
+        return (0, 0, 0);
     };
 
     let mut passed = 0;
     let mut failed = 0;
+    let mut skipped = 0;
 
     if !expected.example.part1.is_empty() {
         let input = find_input(year, day, true, false);
         if input.is_empty() {
             println!("  {} {}", "Part 1:".bold(), "No example input".yellow());
         } else {
-            clear_all_caches_and_stats();
-            let result = advent_puzzles::run_day(year, day, false, input);
-            if result == expected.example.part1 {
-                println!(
-                    "  {} {} {}",
-                    "Part 1:".bold(),
-                    "PASS".green().bold(),
-                    format!("({})", result).dimmed()
-                );
-                passed += 1;
-            } else {
-                println!(
-                    "  {} {} expected {}, got {}",
-                    "Part 1:".bold(),
-                    "FAIL".red().bold(),
-                    expected.example.part1.yellow(),
-                    result.red()
-                );
-                failed += 1;
+            match run_part_test(year, day, false, input) {
+                TestResult::Pass(result) => {
+                    if result == expected.example.part1 {
+                        println!(
+                            "  {} {} {}",
+                            "Part 1:".bold(),
+                            "PASS".green().bold(),
+                            format!("({})", result).dimmed()
+                        );
+                        passed += 1;
+                    } else {
+                        println!(
+                            "  {} {} expected {}, got {}",
+                            "Part 1:".bold(),
+                            "FAIL".red().bold(),
+                            expected.example.part1.yellow(),
+                            result.red()
+                        );
+                        failed += 1;
+                    }
+                    print_memoize_stats();
+                }
+                TestResult::Fail(msg) => {
+                    println!(
+                        "  {} {} {}",
+                        "Part 1:".bold(),
+                        "FAIL".red().bold(),
+                        format!("({})", msg).red()
+                    );
+                    failed += 1;
+                }
+                TestResult::Skipped => {
+                    println!(
+                        "  {} {}",
+                        "Part 1:".bold(),
+                        "SKIP (not yet implemented)".yellow()
+                    );
+                    skipped += 1;
+                }
             }
-            print_memoize_stats();
         }
     } else if verbose {
         println!("  {} {}", "Part 1:".bold(), "No expected value".dimmed());
@@ -301,27 +379,46 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
         if input.is_empty() {
             println!("  {} {}", "Part 2:".bold(), "No example input".yellow());
         } else {
-            clear_all_caches_and_stats();
-            let result = advent_puzzles::run_day(year, day, true, input);
-            if result == expected.example.part2 {
-                println!(
-                    "  {} {} {}",
-                    "Part 2:".bold(),
-                    "PASS".green().bold(),
-                    format!("({})", result).dimmed()
-                );
-                passed += 1;
-            } else {
-                println!(
-                    "  {} {} expected {}, got {}",
-                    "Part 2:".bold(),
-                    "FAIL".red().bold(),
-                    expected.example.part2.yellow(),
-                    result.red()
-                );
-                failed += 1;
+            match run_part_test(year, day, true, input) {
+                TestResult::Pass(result) => {
+                    if result == expected.example.part2 {
+                        println!(
+                            "  {} {} {}",
+                            "Part 2:".bold(),
+                            "PASS".green().bold(),
+                            format!("({})", result).dimmed()
+                        );
+                        passed += 1;
+                    } else {
+                        println!(
+                            "  {} {} expected {}, got {}",
+                            "Part 2:".bold(),
+                            "FAIL".red().bold(),
+                            expected.example.part2.yellow(),
+                            result.red()
+                        );
+                        failed += 1;
+                    }
+                    print_memoize_stats();
+                }
+                TestResult::Fail(msg) => {
+                    println!(
+                        "  {} {} {}",
+                        "Part 2:".bold(),
+                        "FAIL".red().bold(),
+                        format!("({})", msg).red()
+                    );
+                    failed += 1;
+                }
+                TestResult::Skipped => {
+                    println!(
+                        "  {} {}",
+                        "Part 2:".bold(),
+                        "SKIP (not yet implemented)".yellow()
+                    );
+                    skipped += 1;
+                }
             }
-            print_memoize_stats();
         }
     } else if verbose {
         println!("  {} {}", "Part 2:".bold(), "No expected value".dimmed());
@@ -333,74 +430,121 @@ fn run_day_tests(year: u16, day: u8, verbose: bool) -> (usize, usize) {
         }
 
         if !real.part1.is_empty() {
-            clear_all_caches_and_stats();
             let input = find_input(year, day, false, false);
-            let result = advent_puzzles::run_day(year, day, false, input);
-            if result == real.part1 {
-                println!(
-                    "  {} {} {}",
-                    "Part 1 (real):".bold(),
-                    "PASS".green().bold(),
-                    format!("({})", result).dimmed()
-                );
-                passed += 1;
-            } else {
-                println!(
-                    "  {} {} expected {}, got {}",
-                    "Part 1 (real):".bold(),
-                    "FAIL".red().bold(),
-                    real.part1.yellow(),
-                    result.red()
-                );
-                failed += 1;
+            match run_part_test(year, day, false, input) {
+                TestResult::Pass(result) => {
+                    if result == real.part1 {
+                        println!(
+                            "  {} {} {}",
+                            "Part 1 (real):".bold(),
+                            "PASS".green().bold(),
+                            format!("({})", result).dimmed()
+                        );
+                        passed += 1;
+                    } else {
+                        println!(
+                            "  {} {} expected {}, got {}",
+                            "Part 1 (real):".bold(),
+                            "FAIL".red().bold(),
+                            real.part1.yellow(),
+                            result.red()
+                        );
+                        failed += 1;
+                    }
+                    print_memoize_stats();
+                }
+                TestResult::Fail(msg) => {
+                    println!(
+                        "  {} {} {}",
+                        "Part 1 (real):".bold(),
+                        "FAIL".red().bold(),
+                        format!("({})", msg).red()
+                    );
+                    failed += 1;
+                }
+                TestResult::Skipped => {
+                    println!(
+                        "  {} {}",
+                        "Part 1 (real):".bold(),
+                        "SKIP (not yet implemented)".yellow()
+                    );
+                    skipped += 1;
+                }
             }
-            print_memoize_stats();
         }
 
         if !real.part2.is_empty() {
-            clear_all_caches_and_stats();
             let input = find_input(year, day, false, true);
-            let result = advent_puzzles::run_day(year, day, true, input);
-            if result == real.part2 {
-                println!(
-                    "  {} {} {}",
-                    "Part 2 (real):".bold(),
-                    "PASS".green().bold(),
-                    format!("({})", result).dimmed()
-                );
-                passed += 1;
-            } else {
-                println!(
-                    "  {} {} expected {}, got {}",
-                    "Part 2 (real):".bold(),
-                    "FAIL".red().bold(),
-                    real.part2.yellow(),
-                    result.red()
-                );
-                failed += 1;
+            match run_part_test(year, day, true, input) {
+                TestResult::Pass(result) => {
+                    if result == real.part2 {
+                        println!(
+                            "  {} {} {}",
+                            "Part 2 (real):".bold(),
+                            "PASS".green().bold(),
+                            format!("({})", result).dimmed()
+                        );
+                        passed += 1;
+                    } else {
+                        println!(
+                            "  {} {} expected {}, got {}",
+                            "Part 2 (real):".bold(),
+                            "FAIL".red().bold(),
+                            real.part2.yellow(),
+                            result.red()
+                        );
+                        failed += 1;
+                    }
+                    print_memoize_stats();
+                }
+                TestResult::Fail(msg) => {
+                    println!(
+                        "  {} {} {}",
+                        "Part 2 (real):".bold(),
+                        "FAIL".red().bold(),
+                        format!("({})", msg).red()
+                    );
+                    failed += 1;
+                }
+                TestResult::Skipped => {
+                    println!(
+                        "  {} {}",
+                        "Part 2 (real):".bold(),
+                        "SKIP (not yet implemented)".yellow()
+                    );
+                    skipped += 1;
+                }
             }
-            print_memoize_stats();
         }
     }
 
-    (passed, failed)
+    (passed, failed, skipped)
 }
 
-fn print_test_summary(passed: usize, failed: usize) {
+fn print_test_summary(passed: usize, failed: usize, skipped: usize) {
     let total = passed + failed;
-    if failed == 0 {
+    if failed == 0 && skipped == 0 {
         println!(
             "{} {}",
             "✓".green().bold(),
             format!("All {} tests passed!", total).green().bold()
         );
-    } else {
+    } else if failed == 0 {
         println!(
-            "{} {} passed, {} failed",
-            "✗".red().bold(),
+            "{} {} passed, {} skipped",
+            "✓".green().bold(),
             passed.to_string().green(),
-            failed.to_string().red().bold()
+            skipped.to_string().yellow()
         );
+    } else {
+        let mut parts = vec![
+            format!("{} passed", passed).green().to_string(),
+            format!("{} failed", failed).red().bold().to_string(),
+        ];
+        if skipped > 0 {
+            parts.push(format!("{} skipped", skipped).yellow().to_string());
+        }
+        println!("{} {}", "✗".red().bold(), parts.join(", "));
     }
 }
 

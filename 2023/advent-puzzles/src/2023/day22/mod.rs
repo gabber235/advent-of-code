@@ -1,9 +1,7 @@
 use std::u16;
 
 use nom::{bytes::complete::tag, character::complete::newline, multi::separated_list1, IResult};
-use rayon::iter::{
-    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
-};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::utils::point_3d::Point3D;
 

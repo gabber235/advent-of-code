@@ -3,7 +3,6 @@ use std::{
     fmt::Display,
 };
 
-use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,

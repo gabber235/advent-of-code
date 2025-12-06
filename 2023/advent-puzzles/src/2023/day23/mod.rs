@@ -1,11 +1,9 @@
 use std::fmt::Display;
 use std::fmt::Write;
-use std::io::stdin;
 
 use array2d::Array2D;
 use colored::Color;
 use colored::Colorize;
-use pathfinding::directed::astar::astar;
 use strum::IntoEnumIterator;
 
 use crate::utils::{
@@ -270,6 +268,7 @@ fn find_longest_possible_path_with_segments(
     longest_path
 }
 
+#[allow(dead_code)]
 fn print_grid(
     grid: &Array2D<Tile>,
     segments: &[Segment],
@@ -305,11 +304,11 @@ fn print_grid(
                 .to_string();
 
             if path.contains(segment) {
-                write!(string, "{}", char.bold().color(color));
+                let _ = write!(string, "{}", char.bold().color(color));
             } else if blacklisted_segments.contains(segment) {
-                write!(string, "{}", char.color(Color::BrightBlack));
+                let _ = write!(string, "{}", char.color(Color::BrightBlack));
             } else {
-                write!(string, "{}", char);
+                let _ = write!(string, "{}", char);
             }
         } else {
             write!(string, "{}", tile).unwrap();
@@ -335,6 +334,7 @@ impl Segment {
         self.start_cross_point == *point || self.end_cross_point == *point
     }
 
+    #[allow(dead_code)]
     fn points(&self, grid: &Array2D<Tile>) -> Vec<Point> {
         let mut current_point = self.start_point;
         let mut points = vec![current_point];

@@ -42,7 +42,7 @@ pub fn part2(input: String) -> String {
 
 #[derive(Debug)]
 struct Card {
-    index: usize,
+    _index: usize,
     winning_numbers: Vec<u8>,
     card_numbers: Vec<u8>,
 }
@@ -50,7 +50,7 @@ struct Card {
 impl Card {
     fn new(index: usize, winning_numbers: Vec<u8>, card_numbers: Vec<u8>) -> Self {
         Self {
-            index,
+            _index: index,
             winning_numbers,
             card_numbers,
         }

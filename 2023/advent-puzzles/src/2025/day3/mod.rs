@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 pub fn part1(input: String) -> String {
     input
         .lines()

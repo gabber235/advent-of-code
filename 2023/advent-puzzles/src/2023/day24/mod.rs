@@ -3,11 +3,8 @@ use std::{f64, fmt::Display};
 use itertools::Itertools;
 use nom::{
     bytes::complete::tag,
-    character::complete::{alpha1, char, digit1, newline, space1},
-    character::complete::{i64, space0},
-    combinator::{map_res, opt},
-    multi::many0,
-    multi::{many1, separated_list1},
+    character::complete::{i64, newline, space0},
+    multi::separated_list1,
     sequence::tuple,
     IResult,
 };

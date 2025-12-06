@@ -1,11 +1,11 @@
-use std::{collections::HashMap, fmt::Display, io::stdin};
+use std::collections::HashMap;
 
 use array2d::Array2D;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::utils::{
-    direction::{self, Direction},
-    map::{GenerateMap, InteractWithPoint, IterAll, PrintMap},
+    direction::Direction,
+    map::{GenerateMap, InteractWithPoint},
     point::Point,
 };
 
