@@ -59,6 +59,22 @@ impl Point {
         self.move_n_in_direction(direction, 1)
     }
 
+    pub fn up(&self) -> Point {
+        self.move_in_direction(Direction::North)
+    }
+
+    pub fn down(&self) -> Point {
+        self.move_in_direction(Direction::South)
+    }
+
+    pub fn left(&self) -> Point {
+        self.move_in_direction(Direction::West)
+    }
+
+    pub fn right(&self) -> Point {
+        self.move_in_direction(Direction::East)
+    }
+
     pub fn move_n_in_direction(&self, direction: Direction, n: i32) -> Point {
         match direction {
             Direction::North => Self::new(self.x, self.y - n),
