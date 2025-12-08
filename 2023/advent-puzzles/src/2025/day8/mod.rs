@@ -1,172 +1,179 @@
-use std::collections::BTreeMap;
+use rayon::prelude::*;
 
 use crate::utils::point_3d::Point3D;
 
-pub fn part1(input: String) -> String {
-    let points = input
+struct UnionFind {
+    parent: Vec<usize>,
+    rank: Vec<usize>,
+    size: Vec<usize>,
+}
+
+impl UnionFind {
+    fn new(n: usize) -> Self {
+        UnionFind {
+            parent: (0..n).collect(),
+            rank: vec![0; n],
+            size: vec![1; n],
+        }
+    }
+
+    fn find(&mut self, x: usize) -> usize {
+        if self.parent[x] != x {
+            self.parent[x] = self.find(self.parent[x]);
+        }
+        self.parent[x]
+    }
+
+    fn union(&mut self, x: usize, y: usize) -> bool {
+        let root_x = self.find(x);
+        let root_y = self.find(y);
+
+        if root_x == root_y {
+            return false;
+        }
+
+        if self.rank[root_x] < self.rank[root_y] {
+            self.parent[root_x] = root_y;
+            self.size[root_y] += self.size[root_x];
+        } else if self.rank[root_x] > self.rank[root_y] {
+            self.parent[root_y] = root_x;
+            self.size[root_x] += self.size[root_y];
+        } else {
+            self.parent[root_y] = root_x;
+            self.size[root_x] += self.size[root_y];
+            self.rank[root_x] += 1;
+        }
+        true
+    }
+}
+
+#[inline(always)]
+fn parse_i64(s: &[u8]) -> i64 {
+    let mut result: i64 = 0;
+    for &b in s {
+        result = result * 10 + (b - b'0') as i64;
+    }
+    result
+}
+
+fn parse_points(input: &str) -> Vec<Point3D<i64>> {
+    input
         .lines()
         .map(|line| {
-            let cords = line
-                .split(',')
-                .map(|num| num.parse::<i64>().unwrap())
-                .collect::<Vec<i64>>();
-            Point3D {
-                x: cords[0],
-                y: cords[1],
-                z: cords[2],
+            let bytes = line.as_bytes();
+            let mut start = 0;
+            let mut idx = 0;
+
+            while bytes[idx] != b',' {
+                idx += 1;
             }
+            let x = parse_i64(&bytes[start..idx]);
+
+            idx += 1;
+            start = idx;
+            while bytes[idx] != b',' {
+                idx += 1;
+            }
+            let y = parse_i64(&bytes[start..idx]);
+
+            idx += 1;
+            let z = parse_i64(&bytes[idx..]);
+
+            Point3D { x, y, z }
         })
-        .collect::<Vec<Point3D<i64>>>();
+        .collect()
+}
 
-    let mut joins: Vec<(usize, usize, i64)> = vec![];
+#[inline(always)]
+fn distance_squared(a: &Point3D<i64>, b: &Point3D<i64>) -> i64 {
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    let dz = a.z - b.z;
+    dx * dx + dy * dy + dz * dz
+}
 
-    for (i, point) in points.iter().enumerate() {
-        for (j, other) in points.iter().enumerate().skip(i) {
-            if i != j {
-                let distance = point.distanceSquared(other);
-                joins.push((i, j, distance));
-            }
+#[inline(always)]
+fn edge_index_to_pair(edge_idx: usize, n: usize) -> (usize, usize) {
+    let k = edge_idx as f64;
+    let nf = n as f64;
+    let i = ((2.0 * nf - 1.0 - ((2.0 * nf - 1.0).powi(2) - 8.0 * k).sqrt()) / 2.0) as usize;
+    let row_start = i * n - i * (i + 1) / 2;
+    let j = i + 1 + (edge_idx - row_start);
+    (i, j)
+}
+
+fn compute_edges(points: &[Point3D<i64>]) -> Vec<(usize, usize, i64)> {
+    let n = points.len();
+    let total_edges = n * (n - 1) / 2;
+
+    (0..total_edges)
+        .into_par_iter()
+        .map(|edge_idx| {
+            let (i, j) = edge_index_to_pair(edge_idx, n);
+            let distance = distance_squared(&points[i], &points[j]);
+            (i, j, distance)
+        })
+        .collect()
+}
+
+pub fn part1(input: String) -> String {
+    let points = parse_points(&input);
+    let n = points.len();
+    let mut joins = compute_edges(&points);
+
+    let num_connections = if n <= 20 { 10 } else { 1000 };
+
+    if joins.len() > num_connections {
+        joins.select_nth_unstable_by_key(num_connections, |&(_, _, d)| d);
+        joins.truncate(num_connections);
+        joins.sort_unstable_by_key(|&(_, _, d)| d);
+    } else {
+        joins.sort_unstable_by_key(|&(_, _, d)| d);
+    }
+
+    let mut uf = UnionFind::new(n);
+
+    for &(i, j, _) in joins.iter().take(num_connections) {
+        uf.union(i, j);
+    }
+
+    let mut seen_roots = vec![false; n];
+    let mut sizes: Vec<usize> = Vec::new();
+
+    for i in 0..n {
+        let root = uf.find(i);
+        if !seen_roots[root] {
+            seen_roots[root] = true;
+            sizes.push(uf.size[root]);
         }
     }
 
-    joins.sort_by(|a, b| a.2.cmp(&b.2));
-
-    let mut circuits = BTreeMap::<usize, Circuit>::new();
-
-    let num_connections = if points.len() <= 20 { 10 } else { 1000 };
-
-    for (i, j, _) in joins.iter().take(num_connections) {
-        let circuit_i_key = circuits
-            .iter()
-            .find(|(_, c)| c.contains(*i))
-            .map(|(k, _)| *k);
-        let circuit_j_key = circuits
-            .iter()
-            .find(|(_, c)| c.contains(*j))
-            .map(|(k, _)| *k);
-
-        match (circuit_i_key, circuit_j_key) {
-            (Some(k1), Some(k2)) => {
-                if k1 != k2 {
-                    let c2 = circuits.remove(&k2).unwrap();
-                    circuits.get_mut(&k1).unwrap().merge(c2);
-                }
-            }
-            (Some(k), None) => {
-                circuits.get_mut(&k).unwrap().add(*j);
-            }
-            (None, Some(k)) => {
-                circuits.get_mut(&k).unwrap().add(*i);
-            }
-            (None, None) => {
-                let mut new_circuit = Circuit::new();
-                new_circuit.add(*i);
-                new_circuit.add(*j);
-                circuits.insert(*i, new_circuit);
-            }
-        }
-    }
-
-    let mut sizes: Vec<usize> = circuits.values().map(|c| c.points.len()).collect();
     if sizes.is_empty() {
         return "0".to_string();
     }
+
     sizes.sort_unstable_by(|a, b| b.cmp(a));
     let product: usize = sizes.iter().take(3).product();
-    return product.to_string();
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct Circuit {
-    points: Vec<usize>,
-}
-
-impl Circuit {
-    fn new() -> Self {
-        Circuit { points: vec![] }
-    }
-
-    fn add(&mut self, point: usize) {
-        self.points.push(point);
-    }
-
-    fn merge(&mut self, other: Circuit) {
-        self.points.extend(other.points);
-    }
-
-    fn contains(&self, point: usize) -> bool {
-        self.points.contains(&point)
-    }
+    product.to_string()
 }
 
 pub fn part2(input: String) -> String {
-    let points = input
-        .lines()
-        .map(|line| {
-            let cords = line
-                .split(',')
-                .map(|num| num.parse::<i64>().unwrap())
-                .collect::<Vec<i64>>();
-            Point3D {
-                x: cords[0],
-                y: cords[1],
-                z: cords[2],
+    let points = parse_points(&input);
+    let n = points.len();
+    let mut joins = compute_edges(&points);
+
+    joins.par_sort_unstable_by_key(|&(_, _, d)| d);
+
+    let mut uf = UnionFind::new(n);
+    let mut num_components = n;
+
+    for &(i, j, _) in &joins {
+        if uf.union(i, j) {
+            num_components -= 1;
+            if num_components == 1 {
+                let product = points[i].x * points[j].x;
+                return product.to_string();
             }
-        })
-        .collect::<Vec<Point3D<i64>>>();
-
-    let mut joins: Vec<(usize, usize, i64)> = vec![];
-
-    for (i, point) in points.iter().enumerate() {
-        for (j, other) in points.iter().enumerate().skip(i) {
-            if i != j {
-                let distance = point.distanceSquared(other);
-                joins.push((i, j, distance));
-            }
-        }
-    }
-
-    joins.sort_by(|a, b| a.2.cmp(&b.2));
-
-    let mut circuits = BTreeMap::<usize, Circuit>::new();
-
-    for (i, j, _) in joins.iter() {
-        let circuit_i_key = circuits
-            .iter()
-            .find(|(_, c)| c.contains(*i))
-            .map(|(k, _)| *k);
-        let circuit_j_key = circuits
-            .iter()
-            .find(|(_, c)| c.contains(*j))
-            .map(|(k, _)| *k);
-
-        match (circuit_i_key, circuit_j_key) {
-            (Some(k1), Some(k2)) => {
-                if k1 != k2 {
-                    let c2 = circuits.remove(&k2).unwrap();
-                    circuits.get_mut(&k1).unwrap().merge(c2);
-                }
-            }
-            (Some(k), None) => {
-                circuits.get_mut(&k).unwrap().add(*j);
-            }
-            (None, Some(k)) => {
-                circuits.get_mut(&k).unwrap().add(*i);
-            }
-            (None, None) => {
-                let mut new_circuit = Circuit::new();
-                new_circuit.add(*i);
-                new_circuit.add(*j);
-                circuits.insert(*i, new_circuit);
-            }
-        }
-
-        if circuits.len() == 1 && circuits.first_key_value().unwrap().1.points.len() == points.len()
-        {
-            let point_i = points[*i];
-            let point_j = points[*j];
-            let product = point_i.x * point_j.x;
-            return product.to_string();
         }
     }
 
