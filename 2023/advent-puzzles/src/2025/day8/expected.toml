@@ -1,0 +1,8 @@
+[example]
+part1 = "40"
+part2 = "25272"
+
+# Optional: Add real input answers for regression testing
+[real]
+part1 = "42840"
+part2 = "170629052"
