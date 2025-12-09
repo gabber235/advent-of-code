@@ -5,6 +5,7 @@ use std::{
 };
 
 use array2d::Array2D;
+use i_overlay::i_float::float::compatible::FloatPointCompatible;
 
 use super::direction::Direction;
 
@@ -242,5 +243,19 @@ impl Add<Direction> for &Point {
 
     fn add(self, rhs: Direction) -> Self::Output {
         self.move_in_direction(rhs)
+    }
+}
+
+impl FloatPointCompatible<f32> for Point {
+    fn from_xy(x: f32, y: f32) -> Self {
+        Self::new(x as i32, y as i32)
+    }
+
+    fn x(&self) -> f32 {
+        self.x as f32
+    }
+
+    fn y(&self) -> f32 {
+        self.y as f32
     }
 }
