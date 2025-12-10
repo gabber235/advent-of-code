@@ -11,6 +11,7 @@ name = "advent_puzzles"
 advent-derive = { path = "../advent-derive" }
 array2d = "0.3.0"
 colored = "2.1.0"
+good_lp = { version = "*", default-features = false, features = ["microlp"] }
 i_overlay = "^4.0"
 indicatif = { version = "0.17.7", features = ["rayon"] }
 inventory = "0.3"
@@ -22,6 +23,7 @@ nom-supreme = "0.8.0"
 num = "0.4.1"
 pathfinding = "4.6.0"
 petgraph = "0.6.4"
+priority-queue = "2.7.0"
 rayon = "1.8.0"
 regex = "1.10"
 serde = { version = "1.0", features = ["derive"] }
