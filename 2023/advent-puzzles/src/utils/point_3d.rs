@@ -22,7 +22,7 @@ impl<T> Point3D<T>
 where
     T: Copy + std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Add<Output = T>,
 {
-    pub fn distanceSquared(&self, other: &Self) -> T {
+    pub fn distance_squared(&self, other: &Self) -> T {
         let dx = self.x - other.x;
         let dy = self.y - other.y;
         let dz = self.z - other.z;
